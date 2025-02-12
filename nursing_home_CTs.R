@@ -1,0 +1,129 @@
+
+###########################
+
+# Geocoding Nursing Homes 
+
+###########################
+
+library(here)
+library(sf)
+library(sp)
+library(dplyr)
+library(viridis)
+library(ggplot2)
+library(USAboundaries)
+library(rnaturalearth)
+library(GSODR)
+library(ggrepel)
+library(cowplot)
+library(totalcensus)
+library(tidycensus)
+library(PROJ)
+library(rgdal)
+library(raster)
+options(tigris_use_cache = TRUE)
+
+
+
+
+# Import Nursing Home Coordinates 
+
+cms_data <- read.csv("//cdc.gov/project/CCID_NCPDCID_NHSN_SAS/Data/work/_Projects/LTC/COVID-19/Codes/Jason/Surveillance Branch/SDOH/Geospatial/cms_data.csv")
+
+
+
+# load the station metadata file from GSODR (this loads `isd_history` in your
+# R session)
+load(system.file("extdata", "isd_history.rda", package = "GSODR"))
+
+# make nursing home points spatial
+cms_points <- as.data.frame(cms_data) %>% 
+  st_as_sf(coords=c("Longitude","Latitude"), crs=4326, remove=FALSE)  
+
+
+
+
+
+
+# Pull in US Census tracts 
+
+us_ct <- get_acs(
+  geography = "tract", 
+  variables = "B19013_001",
+  state = c("	AL	",
+            "	AZ	",
+            "	AR	",
+            "	CA	",
+            "	CO	",
+            "	CT	",
+            "	DE	",
+            "	FL	",
+            "	GA	",
+            "	ID	",
+            "	IL	",
+            "	IN	",
+            "	IA	",
+            "	KS	",
+            "	KY	",
+            "	LA	",
+            "	ME	",
+            "	MD	",
+            "	MA	",
+            "	MI	",
+            "	MN	",
+            "	MS	",
+            "	MO	",
+            "	MT	",
+            "	NE	",
+            "	NV	",
+            "	NH	",
+            "	NJ	",
+            "	NM	",
+            "	NY	",
+            "	NC	",
+            "	ND	",
+            "	OH	",
+            "	OK	",
+            "	OR	",
+            "	PA	",
+            "	RI	",
+            "	SC	",
+            "	SD	",
+            "	TN	",
+            "	TX	",
+            "	UT	",
+            "	VT	",
+            "	VA	",
+            "	WA	",
+            "	WV	",
+            "	WI	",
+            "	WY	"), 
+  year = 2020,
+  geometry = TRUE
+)
+
+us_ct
+
+plot(us_ct["estimate"])
+
+# Reproject
+cms_prj = st_transform(cms_points, "+init=epsg:26978")
+ct_prj = st_transform(us_ct, "+init=epsg:26978")
+
+# Spatial Join CMS points to CT polygons 
+cms_join <- st_join(cms_prj, left = FALSE, ct_prj) 
+
+plot(cms_join$geometry)
+
+
+# Export CMS Linked Data 
+
+# write.csv(cms_join,file='//cdc.gov/project/CCID_NCPDCID_NHSN_SAS/Data/work/_Projects/LTC/COVID-19/Codes/Jason/Surveillance Branch/SDOH/Geospatial/cms_tracts.csv')
+
+
+
+######################################################
+# Now we have 14,838 nursing homes with their CCN# 
+#   and 11 digit FIPS at the census tract level 
+######################################################
+
