@@ -28,7 +28,7 @@ options(tigris_use_cache = TRUE)
 
 # Import Nursing Home Coordinates 
 
-cms_data <- read.csv("//cdc.gov/project/CCID_NCPDCID_NHSN_SAS/Data/work/_Projects/LTC/COVID-19/Codes/Jason/Surveillance Branch/SDOH/Geospatial/cms_data.csv")
+cms_data <- read.csv("XXXX")
 
 
 
